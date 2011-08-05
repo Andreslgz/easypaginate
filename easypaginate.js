@@ -115,10 +115,6 @@
 			_slide();
 		};
 
-	plugin.test = function(){
-		alert('test');
-	};
-	
 		var init = function(){
 			plugin.options = $.extend({}, defaults, options);
 
