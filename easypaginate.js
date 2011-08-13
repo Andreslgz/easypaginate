@@ -57,9 +57,11 @@
 				activePage.eq(0).addClass("current");
 			}
 
-			if (plugin.options.nextprev){
-				if (upper >= count){ next.hide(); } else { next.show(); }
-				if (lower >= 1){ prev.show(); } else { prev.hide(); }
+			if (count>step){
+				if (plugin.options.nextprev){
+					if (upper >= count){ next.hide(); } else { next.show(); }
+					if (lower >= 1){ prev.show(); } else { prev.hide(); }
+				}
 			}
 
 			var o = plugin.$el.parent().find("." + plugin.options.controls);
@@ -161,19 +163,19 @@
 									show();
 								});
 				}
-
-				if ($.isFunction(plugin.options.onClick)){
-					children.click(function(){
-						children.removeClass("current");
-						$(this).addClass("current");
-						_idx = children.not(":hidden").index(this);
-						plugin.pause();
-						plugin.options.onClick.apply(this, arguments);
-					});
-				}
-
-				show();
 			}
+
+			if ($.isFunction(plugin.options.onClick)){
+				children.click(function(){
+					children.removeClass("current");
+					$(this).addClass("current");
+					_idx = children.not(":hidden").index(this);
+					plugin.pause();
+					plugin.options.onClick.apply(this, arguments);
+				});
+			}
+
+			show();
 		};
 		
 		init();
