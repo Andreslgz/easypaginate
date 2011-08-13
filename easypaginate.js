@@ -91,7 +91,7 @@
 						if ($.isFunction(plugin.options.onSlide)){
 							var el = plugin.$el.find(".current");
 							if (el.length > 0){
-								plugin.options.onSlide.apply(this, [el]);
+								plugin.options.onSlide.apply(el, arguments);
 							}
 						}
 						timer = setTimeout(function(){

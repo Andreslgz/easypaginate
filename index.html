@@ -93,15 +93,14 @@
 
 			$(".gallery").easyPaginate({
 				auto:true,
-				delay: 1000,
 				step: 4,
 				onClick: function(e){
-					var src = $(this).find("a").attr("href");
+					var src = $("a", this).attr("href");
 					$("#stage").html('<img src="'+src+'" />');
 					e.preventDefault();
 				},
-				onSlide: function(el){
-					var src = el.find("a").attr("href");
+				onSlide: function(){
+					var src = $("a", this).attr("href");
 					$("#stage").html('<img src="'+src+'" />');
 				}
 			});
