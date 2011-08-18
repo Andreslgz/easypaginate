@@ -12,23 +12,7 @@
 
 	$.easyPaginate = function(el, options){
 
-		var defaults = {
-			step: 4,
-			delay: 4000,
-			numeric: true,
-			nextprev: true,
-			auto: false,
-			clickstop: true,
-			controls: "pagination",
-			current: "current",
-			container: "easy-paginate",
-			prevContent: "Previous",
-			nextContent: "Next",
-			onClick: false,
-			onSlide: false
-		};
-
-		var plugin = this;
+		var plugin = this, o;
 
 		plugin.$el = $(el);
 
@@ -39,146 +23,152 @@
 			count = children.length,
 			next, prev, page = 1,
 			timer, clicked = false,
-			activePage, _idx;
+			activePage, _idx = 0;
 
 		var show = function(){
+			clearTimeout(timer);
+
 			lower = (page - 1) * step;
 			upper = lower + step;
 
-			_idx = 0;
+			if (_idx == 0 ){
+				children.removeClass(o.current);
+				children.hide().slice(lower, upper).show();
+				children.not(":hidden").eq(0).addClass(o.current);
 
-			children.removeClass("current");
+				if (count>step){
+					if (o.nextprev){
+						if (upper >= count){ next.hide(); } else { next.show(); }
+						if (lower >= 1){ prev.show(); } else { prev.hide(); }
+					}
+				}
 
-			children.hide().slice(lower, upper).show();
-
-			activePage = children.not(":hidden");
-
-			if (plugin.$el.find(".current").length < 1){
-				activePage.eq(0).addClass("current");
-			}
-
-			if (count>step){
-				if (plugin.options.nextprev){
-					if (upper >= count){ next.hide(); } else { next.show(); }
-					if (lower >= 1){ prev.show(); } else { prev.hide(); }
+				var p = plugin.$el.parent().find("." + o.controls);
+				if (p.length > 0) {
+					p.find("li").removeClass(o.current);
+					p.find('li[data-index="' + page + '"]').addClass(o.current);
 				}
 			}
 
-			var o = plugin.$el.parent().find("." + plugin.options.controls);
-
-			if (o.length > 0) {
-				o.find("li").removeClass(plugin.options.current);
-				o.find('li[data-index="' + page + '"]').addClass(plugin.options.current);
-			}
-
-			_slide();
-		};
-
-		var _slide = function(){
-			clearTimeout(timer);
-
-			if (plugin.options.auto){
-				if (plugin.options.clickstop && clicked){} else {
-
-					if (_idx >= activePage.length ){
-						if (upper >= count){
-							page = 1;
+			if (o.auto){
+				if (o.clickstop && clicked){} else {
+					if ($.isFunction(o.onSlide)){
+						var el = plugin.$el.find("."+o.current);
+							o.onSlide.apply(el, arguments);
+					}
+					timer = setTimeout(function(){
+						var len = children.not(":hidden").length -1;
+						if (_idx < len){
+							_idx++;
+							children.removeClass(o.current);
+							children.not(":hidden").eq(_idx).addClass(o.current);
 						} else {
-							page++;
-						}
-						show();
-					} else {
-						if ($.isFunction(plugin.options.onSlide)){
-							var el = plugin.$el.find(".current");
-							if (el.length > 0){
-								plugin.options.onSlide.apply(el, arguments);
+							_idx = 0;
+							if (upper >= count){
+								page = 1;
+							} else {
+								page++;
 							}
 						}
-						timer = setTimeout(function(){
-							children.removeClass("current");
-							activePage.eq(_idx + 1).addClass("current");
-							_idx++;
-							_slide();
-						}, plugin.options.delay);
-					}
+						show();
+					}, o.delay);
 				}
 			}
 		};
 
 		plugin.pause = function(){
 			clicked = false;
-			plugin.options.auto = false;
-			_slide();
+			o.auto = false;
+			show();
 		};
 
 		plugin.slide = function(){
-			plugin.options.auto = true;
 			clicked = false;
-			_slide();
+			o.auto = true;
+			show();
 		};
 
 		var init = function(){
-			plugin.options = $.extend({}, defaults, options);
+			plugin.options = o = $.extend({}, $.easyPaginate.defaults, options);
 
-			plugin.$el.wrap('<div class="' + plugin.options.container + '" />');
+			plugin.$el.wrap('<div class="' + o.container + '" />');
 
-			step = plugin.options.step;
+			step = o.step;
 
 			if (count > step){
 				var pages = Math.floor(count / step);
 				if((count/step) > pages) pages++;
 
-				var ol = $('<ol class="' + plugin.options.controls + '"></ol>').insertAfter(plugin.$el);
+				var ol = $('<ol class="' + o.controls + '"></ol>').insertAfter(plugin.$el);
 
-				if (plugin.options.nextprev){
-					prev = $('<li class="prev">' + plugin.options.prevContent + "</li>")
+				if (o.nextprev){
+					prev = $('<li class="prev">' + o.prevContent + "</li>")
 								.hide()
 								.appendTo(ol)
 								.click(function () {
 									clicked = true;
 									page--;
+									_idx = 0;
 									show();
 								});
 				}
 
-				if (plugin.options.numeric){
+				if (o.numeric){
 					for (var i = 1; i <= pages; i++){
 						$('<li data-index="' + i + '">' + i + "</li>")
 							.appendTo(ol)
 							.click(function () {
 								clicked = true;
 								page = $(this).attr("data-index");
+								_idx = 0;
 								show();
 							});
 					}
 				}
 
-				if (plugin.options.nextprev){
-					next = $('<li class="next">' + plugin.options.nextContent + "</li>")
+				if (o.nextprev){
+					next = $('<li class="next">' + o.nextContent + "</li>")
 								.hide()
 								.appendTo(ol)
 								.click(function () {
 									clicked = true;
 									page++;
+									_idx = 0;
 									show();
 								});
 				}
 			}
 
-			if ($.isFunction(plugin.options.onClick)){
+			if ($.isFunction(o.onClick)){
 				children.click(function(){
-					children.removeClass("current");
-					$(this).addClass("current");
-					_idx = children.not(":hidden").index(this);
 					plugin.pause();
-					plugin.options.onClick.apply(this, arguments);
+					children.removeClass(o.current);
+					$(this).addClass(o.current);
+					_idx = children.not(":hidden").index(this);
+					o.onClick.apply(this, arguments);
 				});
 			}
 
 			show();
 		};
-		
+
 		init();
+	};
+
+	$.easyPaginate.defaults = {
+		step: 4,
+		delay: 4000,
+		numeric: true,
+		nextprev: true,
+		auto: false,
+		clickstop: true,
+		controls: "pagination",
+		current: "current",
+		container: "easy-paginate",
+		prevContent: "Previous",
+		nextContent: "Next",
+		onClick: false,
+		onSlide: false
 	};
 
 	$.fn.easyPaginate = function(options){
